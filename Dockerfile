@@ -1,8 +1,11 @@
-FROM nvidia/cuda:8.0-cudnn6-devel-ubuntu16.04
+FROM nvidia/cuda:8.0-cudnn5-devel-ubuntu16.04
 MAINTAINER Per-Arne Andersen
 
 RUN apt-get update && apt-get install -y apt-utils
 RUN apt-get update && apt-get install -y openssh-server
+RUN apt-get update && apt-get install git python3 python3-pip unzip libcudnn5 libcudnn5-dev -y
+RUN pip3 install tensorflow-gpu
+
 RUN mkdir /var/run/sshd
 RUN echo 'root:root' | chpasswd
 RUN sed -i 's/PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config
@@ -18,7 +21,12 @@ CMD ["/usr/sbin/sshd", "-D"]
 
 ADD . /development
 
-RUN apt-get update && apt-get install git python3 python3-pip unzip -y
-RUN pip3 install tensorflow-gpu
+RUN apt-get purge libcudnn5 libcudnn5-dev -y
+RUN apt-get install libcudnn5 libcudnn5-dev -y -f
+ENV LD_LIBRARY_PATH /usr/local/cauda/lib64:/usr/local/cuda/lib
+RUN ldconfig /usr/local/cuda/lib64
+RUN echo "ldconfig /usr/local/cuda/lib64" >> /root/.bashrc
+RUN cd /development
 
-RUN cd /development && python3 cifar10_train.py
+
+
